@@ -1,0 +1,91 @@
+#!/bin/sh
+
+# Heavily based on the Slackware 14.1 SlackBuild as well as an Slacky Slackbuild.
+# Packager GlobetrotterDK
+
+PRGNAM=vuescan
+VERSION=${VERSION:-9.4.47}
+BUILD=${BUILD:-1}
+TAG=${TAG:-_SBo}
+
+# and choose source file accordingly
+if [ -z "$ARCH" ]; then
+  case "$( uname -m )" in
+    i?86)
+	ARCH=i486
+	SOURCEFILE=vuex3295.tgz ;;
+    x86_64)
+	ARCH=x86_64
+	SOURCEFILE=vuex6495.tgz ;;
+    # Other archs are unsupported:
+       *) echo "ARCH $( uname -m ) is unsupported."; exit 1 ;;
+  esac
+fi
+
+CWD=$(pwd)
+TMP=${TMP:-/tmp/SBo}
+PKG=$TMP/package-$PRGNAM
+OUTPUT=${OUTPUT:-/tmp}
+
+set -e 
+
+rm -rf $PKG
+mkdir -p $TMP $PKG $OUTPUT
+cd $TMP
+rm -rf $PRGNAM-$VERSION
+mkdir -p $PRGNAM-$VERSION
+cd $PRGNAM-$VERSION
+tar xvf $CWD/$SOURCEFILE
+chown -R root:root .
+find -L . \
+ \( -perm 777 -o -perm 775 -o -perm 750 -o -perm 711 -o -perm 555 -o -perm 511 \) \
+ -exec chmod 755 {} \; -o \
+ \( -perm 666 -o -perm 664 -o -perm 600 -o -perm 444 -o -perm 440 -o -perm 400 \) \
+ -exec chmod 644 {} \;
+
+# Program does not need compiling, is a binary program
+
+# Program does not provide any means of installing. Installing manually to /opt is one possibility
+#mkdir -p $PKG/opt/$PRGNAM
+#cp -a VueScan/* $PKG/opt/$PRGNAM
+
+#However, I choose to install to usr/bin
+mkdir -p $PKG/usr/bin
+cat <<EOF >$PKG/usr/bin/vuescan
+#!/bin/sh
+exec /usr/lib/VueScan/vuescan
+EOF
+chmod +x $PKG/usr/bin/vuescan
+chmod +x $PKG/usr/lib/VueScan/vuescan
+
+mkdir -p $PKG/usr/share/{applications,pixmaps}
+cat $CWD/vuescan.png > $PKG/usr/share/pixmaps/vuescan.png
+
+# Create a file that will appear in DE/WM menu
+cat << EOF > $PKG/usr/share/applications/vuescan.desktop
+[Desktop Entry]
+Name=VueScan
+GenericName=Scanner program
+GenericName[it]=Applicazione per Scanner
+Comment=Powerful, easy to use scanner utility
+Comment[it]=Applicazione per scanner potente e facile da usare
+Exec=vuescan
+Icon=vuescan
+StartupNotify=true
+Terminal=0
+Type=Application
+Encoding=UTF-8
+Categories=Application;Graphics;
+EOF
+
+# Include the SlackBuild script in the documentation directory
+mkdir -p $PKG/usr/doc/$PRGNAM-$VERSION
+cat $CWD/$PRGNAM.SlackBuild > $PKG/usr/doc/$PRGNAM-$VERSION/$PRGNAM.SlackBuild
+
+# Copy the slack-desc into ./install
+mkdir -p $PKG/install
+cat $CWD/slack-desc > $PKG/install/slack-desc
+
+# Make the package; be sure to leave it in $OUTPUT
+cd $PKG
+/sbin/makepkg -l y -c n $OUTPUT/$PRGNAM-$VERSION-$ARCH-$BUILD$TAG.${PKGTYPE:-tgz}
